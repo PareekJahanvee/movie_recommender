@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendations for {{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .movie-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .movie-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-gray-900 to-gray-800 text-white min-h-screen p-6">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-4xl font-extrabold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+            Recommendations for <span class="text-blue-300">{{ title }}</span>
+        </h1>
+        <a href="/" class="block text-center text-blue-400 hover:text-blue-300 transition duration-300 mb-6 font-semibold">Back to Search</a>
+        {% if recommendations %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for rec in recommendations %}
+                    <div 
+                        class="movie-card bg-gray-800 p-6 rounded-xl shadow-lg cursor-pointer hover:bg-gray-700"
+                        onclick="submitNewSearch('{{ rec.title | replace("'", "\\'") }}')"
+                    >
+                        <h3 class="text-xl font-semibold mb-3 text-blue-200">{{ rec.title }}</h3>
+                        <p class="text-gray-300">Similarity: <span class="font-medium">{{ rec.similarity }}%</span></p>
+                        <p class="text-gray-300">Year: <span class="font-medium">{{ rec.year }}</span></p>
+                        <p class="text-gray-300">IMDb Rating: <span class="font-medium">{{ rec.rating }}</span></p>
+                        <p class="text-gray-300">Genre: <span class="font-medium">{{ rec.genre }}</span></p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-center text-red-400 bg-red-900/50 p-4 rounded-lg">No recommendations found.</p>
+        {% endif %}
+    </div>
+    <script>
+        function submitNewSearch(title) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/recommend';
+            const titleInput = document.createElement('input');
+            titleInput.type = 'hidden';
+            titleInput.name = 'title';
+            titleInput.value = title;
+            const filterInput = document.createElement('input');
+            filterInput.type = 'hidden';
+            filterInput.name = 'filter';
+            filterInput.value = 'all';
+            form.appendChild(titleInput);
+            form.appendChild(filterInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+</body>
+</html>
