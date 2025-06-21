@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommender</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom loader animation */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1e40af;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Autocomplete highlight */
+        .autocomplete-item:hover .highlight {
+            @apply bg-yellow-200;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-gray-900 to-gray-800 text-white min-h-screen flex items-center justify-center">
+    <div class="max-w-2xl w-full bg-gray-800/90 p-8 rounded-xl shadow-2xl backdrop-blur-sm mx-4">
+        <h1 class="text-4xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+            Movie Recommender
+        </h1>
+        {% if error %}
+            <p class="text-red-400 text-center mb-6 bg-red-900/50 p-3 rounded-lg">{{ error }}</p>
+        {% endif %}
+        <form id="searchForm" action="/recommend" method="post" class="space-y-6">
+            <div class="relative">
+                <input 
+                    type="text" 
+                    id="movieInput" 
+                    name="title" 
+                    placeholder="Type a movie title..." 
+                    class="w-full p-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                    required 
+                    autocomplete="off"
+                >
+                <div id="autocompleteList" class="absolute w-full bg-gray-700 border border-gray-600 rounded-lg mt-2 max-h-60 overflow-y-auto hidden z-10 shadow-lg">
+                    <!-- Autocomplete suggestions will be populated here -->
+                </div>
+            </div>
+            <select 
+                name="filter" 
+                class="w-full p-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+            >
+                <option value="all">All Features</option>
+                <option value="genre">Genre</option>
+                <option value="director">Director</option>
+                <option value="star">Star</option>
+            </select>
+            <button 
+                type="submit" 
+                class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-400/50 transition duration-300 font-semibold"
+            >
+                Get Recommendations
+            </button>
+        </form>
+        <div id="loader" class="loader hidden"></div>
+    </div>
+    <script>
+        const movieInput = document.getElementById('movieInput');
+        const autocompleteList = document.getElementById('autocompleteList');
+        const searchForm = document.getElementById('searchForm');
+        const loader = document.getElementById('loader');
+
+        // Autocomplete functionality
+        movieInput.addEventListener('input', async () => {
+            const query = movieInput.value.toLowerCase();
+            autocompleteList.innerHTML = '';
+            if (query.length < 2) {
+                autocompleteList.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/movies?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                const matches = data.movie_titles;
+
+                if (matches.length === 0) {
+                    autocompleteList.classList.add('hidden');
+                    return;
+                }
+
+                matches.forEach(title => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item p-3 hover:bg-gray-600 cursor-pointer text-white';
+                    // Highlight matching part
+                    const regex = new RegExp(`(${query})`, 'gi');
+                    div.innerHTML = title.replace(regex, '<span class="highlight">$1</span>');
+                    div.addEventListener('click', () => {
+                        movieInput.value = title;
+                        autocompleteList.classList.add('hidden');
+                    });
+                    autocompleteList.appendChild(div);
+                });
+                autocompleteList.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error fetching suggestions:', error);
+            }
+        });
+
+        // Hide autocomplete when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!movieInput.contains(e.target) && !autocompleteList.contains(e.target)) {
+                autocompleteList.classList.add('hidden');
+            }
+        });
+
+        // Show loader on form submit
+        searchForm.addEventListener('submit', () => {
+            loader.classList.remove('hidden');
+            searchForm.querySelector('button').disabled = true;
+        });
+    </script>
+</body>
+</html>
